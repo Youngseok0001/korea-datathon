@@ -1,0 +1,909 @@
+# Copyright 2018 Google LLC
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     https://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+
+title: Project Deployment Schema
+description: The specification for one or more deployed projects.
+additionalProperties: false
+
+definitions:
+  email_address:
+    type: string
+    pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
+  additional_permission_members:
+    type: string
+    pattern: ^(allAuthenticatedUsers|allUsers|(user|group|domain|serviceAccount):.+)$
+  add_members_without_alluser:
+    type: string
+    pattern: ^(allAuthenticatedUsers|(user|group|domain|serviceAccount):.+)$
+
+  gcp_project:
+    type: object
+    additionalProperties: false
+    required:
+    - project_id
+    - owners_group
+    - auditors_group
+    - audit_logs
+    properties:
+      project_id:
+        type: string
+        description: |
+          The ID of this project. Must be unique. This cannot be changed after
+          the project has been deployed.
+        pattern: ^[a-z][-a-z0-9]{4,28}[a-z0-9]$
+
+      billing_account:
+        type: string
+        description: |
+          The ID of the billing account to attach to this project.
+          If set, this will override the billing_account set in the overall
+          config.
+        pattern: ^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}$
+
+      folder_id:
+        type: string
+        description: |
+          Optional ID of the folder that the projects will be created
+          under. Typically a base-10 string representation of an integer.
+          If set, this will override the folder_id set in the overall config.
+        pattern: ^[0-9]{8,25}$
+
+      owners_group:
+        #$ref: '#/definitions/email_address'
+        type: string
+        pattern: ^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-.]+$
+        description: Owners group for this project.
+
+      auditors_group:
+        $ref: '#/definitions/email_address'
+        description: |
+          Group to be granted access to audit logs and securityReviewer role in
+          this project.
+
+      data_readwrite_groups:
+        type: array
+        description: |
+          Optional list of groups to be granted Read/Write access to non-logging
+          GCS buckets, BigQuery datasets and Pubsub subscriptions in this
+          project.
+        uniqueItems: true
+        items:
+          $ref: '#/definitions/email_address'
+
+      data_readonly_groups:
+        type: array
+        description: |
+          Optional list of groups to be granted Read-only access to non-logging
+          GCS buckets and BigQuery datasets in this project.
+        items:
+          $ref: '#/definitions/email_address'
+
+      custom_roles:
+        type: array
+        description: |
+          Optional list of custom roles to be created in this project.
+          items:
+            type: object
+            additionalProperties: false
+            required:
+            - name
+            - permissions
+            properties:
+              name:
+                type: string
+                description: Name of the custom role.
+              permissions:
+                type: array
+                description: A list of permissions granted to the role.
+                items:
+                  type: string
+                  description: A service name.
+              title:
+                type: string
+                description: |
+                  Optional title of the role. If unset, defaults to the name.
+              description:
+                type: string
+                description: |
+                  Optional description of the role. If unset, defaults to
+                  the name.
+
+      create_deletion_lien:
+        type: boolean
+        description: |
+          Optional. Whether to create project deletion lien or not.
+          This can be set to true after the project has been deployed.
+          However, setting it to false if it was previously true will not remove
+          the lien.
+
+      additional_project_permissions:
+        type: array
+        description: |
+          Additional project-level roles to grant to members, not covered by the
+          groups above. These are required in special cases but generally not
+          recommended.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - roles
+          - members
+          properties:
+            roles:
+              type: array
+              description: |
+                A list of roles to grant to each of the listed members. Use the
+                full role name, e.g. roles/bigquery.jobUser or
+                projects/my-project/roles/my-custom-role.
+              minItems: 1
+              items:
+                type: string
+                pattern: roles\/
+            members:
+              type: array
+              description: |
+                A list of members to be granted each of the listed roles.
+                Include the member type prefix (user, group, domain, or
+                serviceAccount).
+              minItems: 1
+              items:
+                type: string
+                pattern: ^(user|group|domain|serviceAccount):.+$
+
+      audit_logs:
+        type: object
+        description: |
+          Configuration of the (local or remote) audit logs for this project.
+          This cannot be changed after the project has been deployed.
+        additionalProperties: false
+        # TODO: uncomment this
+        #required:
+        #- logs_bq_dataset
+        properties:
+          logs_bq_dataset:
+            type: object
+            description: |
+              NOT READY FOR GENERAL USE. BigQuery dataset to hold audit logs.
+            additionalProperties: false
+            required:
+            - properties
+            properties:
+              properties:
+                type: object
+                description: |
+                  Wraps the CFT template bigquery_dataset.py.
+                  See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/bigquery for details.
+                  additionalProperties: false
+                  required:
+                  - name
+                  - location
+                  properties:
+                    name:
+                      type: string
+                      description: |
+                        Name of the BiqQuery dataset. For local audit logs,
+                        the recommended name is "audit-logs". For remote audit
+                        logs, the recommended name is the project-id with
+                        hyphens substituted with underscores.
+                      pattern: ^[_a-zA-Z0-9]{1,}$
+                    location:
+                      type: string
+                      description: |
+                        Location of the dataset. See BigQuery documenation for
+                        available locations.
+          logs_bigquery_dataset:
+            type: object
+            description: BigQuery dataset to hold audit logs.
+            additionalProperties: false
+            required:
+            - location
+            properties:
+              name:
+                type: string
+                description: |
+                  Name of the BiqQuery dataset. Not required if this is the
+                  audit_logs_project, or a project with local audit logs. For
+                  remote audit logs, the recommended name is the project-id with
+                  hyphens substituted with underscores.
+                pattern: ^[_a-zA-Z0-9]{1,}$
+              location:
+                type: string
+                description: |
+                  Location of the dataset. See BigQuery documenation for
+                  available locations.
+                minLength: 2
+          logs_gcs_bucket:
+            type: object
+            description: |
+              GCS bucket to hold GCS logs. Required only if the project contains
+              data_buckets.
+            additionalProperties: false
+            required:
+            - ttl_days
+            properties:
+              name:
+                type: string
+                description: |
+                  Globally unique name of the logs GCS bucket.
+                  See https://cloud.google.com/storage/docs/best-practices for
+                  best practices.
+                pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}$
+              location:
+                type: string
+                description: Regional or multi-regional location of the bucket.
+                minLength: 2
+              storage_class:
+                type: string
+                description: Storage class of the bucket.
+                minLength: 2
+              ttl_days:
+                type: integer
+                description: |
+                  TTL (in days) on objects in this bucket.
+                  This is a helper that creates a lifecycle rule.
+                minimum: 1
+              properties:
+                type: object
+                description: |
+                  Wraps the CFT template gcs_bucket.py.
+                  See https://github.com/GoogleCloudPlatform/cloud-foundation-toolkit/tree/master/dm/templates/gcs_bucket for details.
+                additionalProperties: false
+                required:
+                - name
+                - location
+                - storageClass
+                properties:
+                  name:
+                    type: string
+                    description: |
+                      Globally unique name of the GCS bucket.
+                      See https://cloud.google.com/storage/docs/best-practices
+                      for recommendations on setting names here.
+                    pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}$
+                  location:
+                    type: string
+                    description: Regional or multi-regional location of the bucket.
+                    minLength: 2
+                  storageClass:
+                    type: string
+                    description: Storage class of the bucket.
+      stackdriver_alert_email:
+        $ref: '#/definitions/email_address'
+        description: |
+          If set, the email address to send alerts for IAM changes and
+          unexpected GCS bucket access. If not set, a Stackdriver account will
+          not be created for this project. While this field can be set after the
+          project has been deployed, it cannot be changed afterwards.
+      violation_exceptions:
+        type: object
+        patternProperties:
+          "^[\\w_\\-.,+!*'()%][\\w_\\-.,+!*'()%\\/]{0,99}$":
+            type: array
+            description: |
+              The service account(s) listed here are "privileged" or "trusted" in
+              the project. The DPT set the service accounts as exceptions when
+              setting up logs-based metrics.
+            items:
+              $ref: '#/definitions/email_address'
+
+      bigquery_datasets:
+        type: array
+        description: List of BigQuery (non-logs) datasets to create.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - name
+          - location
+          properties:
+            name:
+              type: string
+              description: Name of the BiqQuery dataset.
+              pattern: ^[_a-zA-Z0-9]{1,}$
+            location:
+              type: string
+              description: |
+                Location of the dataset. See BigQuery documenation for
+                available locations.
+              minLength: 2
+            additional_dataset_permissions:
+              owners:
+                type: array
+                description: |
+                  A list of members to be granted owners' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
+              readwrite:
+                type: array
+                description: |
+                  A list of members to be granted writers' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
+              readonly:
+                type: array
+                description: |
+                  A list of members to be granted readers' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers).
+                items:
+                  #$ref: '#/definitions/add_members_without_alluser'
+
+      data_buckets:
+        type: array
+        description: List of GCS (non-logs) buckets to create.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - location
+          - storage_class
+          properties:
+            name:
+              type: string
+              description: |
+                Name of the GCS bucket exactly.
+              pattern: ^[-_.a-zA-Z0-9]{0,215}$
+            name_suffix:
+              type: string
+              description: |
+                Suffix appended to project_id as the name of the GCS bucket.
+                Suffix is required, if name is not specified.
+                Otherwise, suffix should be ignored.
+              pattern: ^[-_.a-zA-Z0-9]{0,215}$
+            location:
+              type: string
+              description: Regional or multi-regional location of the bucket.
+              minLength: 2
+            storage_class:
+              type: string
+              description: Storage class of the bucket.
+              minLength: 2
+            expected_users:
+              type: array
+              description: |
+                Optional list of expected users to access this bucket.
+                Unexpected users will increment a logs-based metric that can
+                be tied to an email alert.
+              items:
+                $ref: '#/definitions/email_address'
+            additional_bucket_permissions:
+              owners:
+                type: array
+                description: |
+                  A list of members to be granted storage admin' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              readwrite:
+                type: array
+                description: |
+                  A list of members to be granted storage object admin' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              writeonly:
+                type: array
+                description: |
+                  A list of members to be granted storage object creator' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+              readonly:
+                type: array
+                description: |
+                  A list of members to be granted storage object viewer' roles.
+                  Include the member type (user, group, domain, serviceAccount),
+                  or a predefined set (allAuthenticatedUsers, or allUsers).
+                items:
+                  #$ref: '#/definitions/additional_permission_members'
+
+      pubsub:
+        type: object
+        description: |
+          The topic that the given service account can publish updates to.
+        additionalProperties: false
+        required:
+        - topic
+        - subscription
+        - publisher_account
+        - ack_deadline_sec
+        properties:
+          topic:
+            type: string
+            description: Name of the pubsub topic.
+            pattern: ^[a-zA-Z][-_.~+%a-zA-Z0-9]{2,254}$
+          subscription:
+            type: string
+            description: Name of the pubsub subscription.
+            pattern: ^[a-zA-Z][-_.~+%a-zA-Z0-9]{2,254}$
+          publisher_account:
+            $ref: '#/definitions/email_address'
+            description: Service account that publishes updates to topic.
+          ack_deadline_sec:
+            type: integer
+            description: Ack deadline for the pubsub subscription.
+            minimum: 10
+            maximum: 600
+
+      gce_instances:
+        type: array
+        description: List of Google Compute Engine VM Instaces to create.
+        items:
+          type: object
+          additionalProperties: false
+          required:
+          - name
+          - zone
+          - machine_type
+          - start_vm
+          properties:
+            name:
+              type: string
+              description: Name of the VM to create.
+              pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+            zone:
+              type: string
+              description: The zone of the VM to create, e.g. us-central1-f.
+              minLength: 2
+            machine_type:
+              type: string
+              description: The type of the new VM instance, e.g. n1-standard-1.
+              minLength: 2
+            existing_boot_image:
+              type: string
+              description: |
+                The path of an existing image to use as a boot disk for this
+                VM. e.g. projects/debian-cloud/global/images/family/debian-9. If
+                using a custom VM image from a GCS path, omit this field and
+                set custom_boot_image instead.
+              pattern: global\/images
+            custom_boot_image:
+              type: object
+              description: |
+                A custom disk image to create from a GCS path to use as the boot
+                disk for this VM. Once deployed, this field cannot be changed.
+              additionalProperties: false
+              required:
+              - image_name
+              - gcs_path
+              properties:
+                image_name:
+                  type: string
+                  description: Name of the new disk image to create.
+                  pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                gcs_path:
+                  type: string
+                  description: |
+                    GCS path (without gs:// prefix) to the tar.gz file of the
+                    RAW image file to use for the boot image.
+                  pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
+            start_vm:
+              type: boolean
+              description: If True, leave the new VM in a started state.
+            startup_script:
+              type: string
+              description: Script to run when start the VM.
+
+      gce_firewall_rules:
+        type: array
+        description: List of Google Compute Engine firewall rules to create.
+        items:
+          type: object
+          description: |
+            A firewall rule. See
+            https://cloud.google.com/compute/docs/reference/rest/v1/firewalls
+            for the full list of properties that can be provided in a firewall
+            rule.
+          required:
+          - name
+          properties:
+            name:
+              type: string
+              pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+            description:
+              type: string
+            allowed:
+              type: array
+            denied:
+              type: array
+            sourceRanges:
+              type: array
+            destinationRanges:
+              type: array
+
+      enabled_apis:
+        type: array
+        description: List of APIs to enable in the new project.
+        items:
+          type: string
+          minLength: 2
+
+      resources:
+        type: object
+        description: |
+          Resources to deploy. See README.md for links to resource specific documentation and schemas.
+          # TODO: investigate implementing a subset of the CFT
+          # schema here for the fields we change.
+        additionalProperties: false
+        properties:
+          bq_datasets:
+            type: array
+            description: Provides support for BigQuery Datasets.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template bigquery_dataset.py.
+                    In addition, location must be set and setDefaultOwner must
+                    not be set to true.
+          chc_datasets:
+            type: array
+            description: Provides support for CHC datasets (alpha).
+            items:
+              type: object
+              description: |
+                Wraps the parameters for a CHC dataset.
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the template chc_dataset.py.
+          gce_firewalls:
+            type: array
+            description: Provides support for firewalls.
+            additionalProperties: false
+            items:
+              type: object
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template firewall.py.
+          gce_instances:
+            type: array
+            description: Provides support for GCE instances.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template instance.py.
+                custom_boot_image:
+                  type: object
+                  description: |
+                    A custom disk image to create from a GCS path to use as the boot
+                    disk for this VM. Once deployed, this field cannot be changed.
+                  additionalProperties: false
+                  required:
+                  - image_name
+                  - gcs_path
+                  properties:
+                    image_name:
+                      type: string
+                      description: Name of the new disk image to create.
+                      pattern: ^[a-z]([-a-z0-9]{0,61}[a-z0-9])?$
+                    gcs_path:
+                      type: string
+                      description: |
+                        GCS path (without gs:// prefix) to the tar.gz file of the
+                        RAW image file to use for the boot image.
+                      pattern: ^[a-zA-Z0-9][-_.a-zA-Z0-9]{0,221}\/.+\.tar\.gz$
+          gcs_buckets:
+            type: array
+            description: Provides support for GCS Buckets.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template gcs_bucket.py.
+                    Since GCS bucket names share a global namespace, see
+                    https://cloud.google.com/storage/docs/best-practices for
+                    best pratices.
+                    In addition, location must be set and versioning.enabled
+                    must not be set to false, and predefined ACLs cannot be
+                    set.
+                ttl_days:
+                  type: number
+                  description: |
+                    A helper to set a deletion lifecycle rule to clean up
+                    objects after the specified number of days.
+                expected_users:
+                  type: array
+                  description: |
+                    Helper to create an unexpected access metric for accesses
+                    from users outside of this list.
+                  items:
+                    type: string
+                    description: User emails (e.g. foo@domain.com)
+          gke_clusters:
+            type: array
+            description: Provides support for GKE Clusters.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template gke.py.
+          gke_workloads:
+            type: array
+            description: Provides support for GKE workloads supported by kubectl.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - cluster_name
+              - properties
+              properties:
+                cluster_name:
+                  type: string
+                properties:
+                  type: object
+                  description: |
+                    Must be a valid kubectl workload definition.
+          iam_custom_roles:
+            type: array
+            description: Provides support for creating IAM custom roles.
+            items:
+              type: object
+              additionalProperties: false
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template iam_custom_role.py.
+          iam_policies:
+            type: array
+            description: |
+              Provides support for adding project level IAM bindings.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - name
+              - properties
+              properties:
+                name:
+                  type: string
+                  description: |
+                    Name of this policy. Only used by deployment manager.
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template iam_member.py.
+          pubsubs:
+            type: array
+            description: Provides support for Pubsub channels.
+            items:
+              type: object
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template pubsub.py.
+          service_accounts:
+            type: array
+            description: Provides support for service accounts.
+            items:
+              type: object
+              description: |
+                Wraps the parameters for a service account.
+              additionalProperties: false
+              required:
+              - properties
+              properties:
+                properties:
+                  accountId:
+                    type: string
+                    description: |
+                      The accountId is used to generate the service account
+                      email address and a stable unique id.
+                    pattern: ^[a-z]([-a-z0-9]*[a-z0-9])$
+                  serviceAccount:
+                    type: string
+                    description: |
+                      A user-specified name for the service account.
+          vpc_networks:
+            type: array
+            description: Provides support for VPC networks.
+            additionalProperties: false
+            items:
+              type: object
+              required:
+              - properties
+              properties:
+                properties:
+                  type: object
+                  description: |
+                    Wraps the CFT template network.py.
+
+required:
+- overall
+- projects
+
+properties:
+  overall:
+    type: object
+    description: Set of properties that apply to all projects.
+    additionalProperties: false
+    required:
+    - billing_account
+    properties:
+      billing_account:
+        type: string
+        description: The ID of the billing account to attach to projects.
+        pattern: ^[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}-[a-zA-Z0-9]{6}$
+
+      folder_id:
+        type: string
+        description: |
+          Optional ID of the folder that the projects will be created
+          under. Typically a base-10 string representation of an integer. If
+          this is omitted, projects will not be created under a folder.
+        pattern: ^[0-9]{8,25}$
+
+      organization_id:
+        type: string
+        description: |
+          Optional ID of the organization that the projects will be created
+          under. Typically a base-10 string representation of an integer. If
+          this is omitted, projects will not be created under an organization.
+        pattern: ^[0-9]{8,25}$
+
+      domain:
+        type: string
+        description: |
+          Optional domain that users and groups should belong to. This is used
+          for monitoring.
+        minLength: 2
+
+      allowed_apis:
+        type: array
+        description: |
+          Optional list of APIs that are allowed to be enabled in any project.
+          This is used for monitoring.
+        items:
+          type: string
+          minLength: 2
+
+  audit_logs_project:
+    $ref: '#/definitions/gcp_project'
+    description: |
+      The project to hold audit logs, if using remote audit logs. All created
+      projects will save audit logs to this project. If audit_logs_project is
+      not provided, all projects save audit logs locally.
+
+  forseti:
+    type: object
+    description: The Forseti instance configuration.
+    additionalProperties: false
+    required:
+    - project
+    properties:
+      project:
+        $ref: '#/definitions/gcp_project'
+        description: The project install the Forseti instance in.
+      installer_flags:
+        type: string
+        description: |
+          Flags to pass to the Forseti installer. This field is only used on
+          initial Forseti deployment. Changing or removing it post-deployment is
+          a no-op.
+
+  projects:
+    type: array
+    description: List of data hosting projects to deploy.
+    items:
+      $ref: '#/definitions/gcp_project'
+
+  imports:
+    type: array
+    description: |
+      A list of YAML files that are imported to current file.
+      Note: lists will be appended and fields will not be overwritten.
+      For example, the list of projects can be spread over multiple files, but
+      the fields in overall block can't be overwritten in multiple places.
+      We recommend keeping your split configs and import paths simple.
+    items:
+      type: string
+      description: |
+        The path to import. Glob supported as defined in
+        https://godoc.org/path/filepath#Glob.
+
+  generated_fields:
+    type: object
+    properties:
+      forseti:
+        type: object
+        description: |
+          Output only. Fields whose values are known after Forseti deployment.
+        properties:
+          service_account:
+            type: string
+            description: The forseti server service account that needs to view
+              the GCP resources of all projects.
+          server_bucket:
+            type: string
+            description: The forseti server bucket that holds the configuration.
+      projects:
+        type: object
+        patternProperties:
+          "^[a-z][-a-z0-9]{4,28}[a-z0-9]$":
+            type: object
+            additionalProperties: false
+            description: |
+              Output only. Fields whose values are produced during deployment and
+              are used for monitoring of the project.
+            properties:
+              failed_step:
+                type: number
+                description: |
+                  Step the deployment script failed at (if they failed).
+                  Presence of this field implies a project has not been fully
+                  deployed. Conversely, absence implies the project was deployed
+                  and now just needs to be updated.
+              project_number:
+                type: string
+                description: The projects unique number.
+              gce_instance_info:
+                type: array
+                description: List of GCE instance info.
+                items:
+                  type: object
+                  additionalProperties: false
+                  required:
+                    - name
+                    - id
+                  properties:
+                    name:
+                      type: string
+                      description: Name of the GCE instance.
+                    id:
+                      type: string
+                      description: ID of the GCE instance.
+              log_sink_service_account:
+                type: string
+                description: |
+                  The service account used for this project's audit log sink/export.

@@ -1,0 +1,17 @@
+# billing info
+export BILLING_ACCOUNT=01A9C0-40989F-BA7590
+
+#choosing domain name, project prefix and project zones
+export DOMAIN=googlegroups.com
+export PROJECT_PREFIX=nus-mit-datathon
+export BIGQUERY_LOCATION=asia-northeast1
+export GCS_LOCATION=asia-southeast
+export tGCE_ZONE=asia-southeast1-a # St. Ghislain, Belgium
+
+#permission control group setup
+export OWNERS_GROUP=${PROJECT_PREFIX}-owners@${DOMAIN}
+export AUDITORS_GROUP=${PROJECT_PREFIX}-auditors@${DOMAIN}
+export EDITORS_GROUP=${PROJECT_PREFIX}-readwrite@${DOMAIN}
+export DATA_READERS_GROUP=${PROJECT_PREFIX}-data-readers@${DOMAIN}
+export PROJECT_USERS_GROUP=${PROJECT_PREFIX}-participants@${DOMAIN}
+
