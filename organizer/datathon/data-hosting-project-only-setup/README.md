@@ -1,6 +1,8 @@
 
 # Google Cloud Project Setup Guide for Datathons
---modified by Jeon Young Seok--
+
+* --modified by Jeon Young Seok--
+
 This guide is designed to help structured data users (e.g. healthcare datathon
 organizers and participants, structured data analysis course instructors and
 students) to set up a set of Google Cloud Projects, in order to host the
