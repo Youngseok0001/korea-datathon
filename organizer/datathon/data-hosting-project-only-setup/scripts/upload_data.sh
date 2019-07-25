@@ -19,11 +19,11 @@
 # will try to process all file with that format in the given input directory.
 
 set -u -e
-OWNERS_GROUP="youngseokjeon74@gmail.com"
-PROJECT_ID="My Project 62469"
+OWNERS_GROUP="nus-datathon-owners@googlegroups.com"
+PROJECT_ID="kor-data"
 DATASET_NAME="demo"
 INPUT_DIR="../dataset/data"
-SCHEMA_DIR="../dataset/schmas"
+SCHEMA_DIR="../dataset/schemas"
 LOCATION=asia-northeast1
 STATE_FILE="$0".state
 
@@ -132,8 +132,9 @@ if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
   echo "Loading data from Google Cloud Storage to BigQuery."
   for file in ${INPUT_DIR}/*.csv; do
     echo "Loading data file `basename ${file}` to BigQuery."
-    # Assume the schema file ends with .csv.schema suffix.
+    # Assume the schema file ends with .csv.gz.schema suffix.
     schema_file=${SCHEMA_DIR}/$(basename ${file}).schema
+    echo ${schema_file}
     delete_schema_file=false
     if [[ ! -e ${schema_file} ]]; then
       # Generate the schema file if it does not already exist.
@@ -143,12 +144,11 @@ if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
     fi
 
     # Upload data to BigQuery.
-    table_name=`echo $(basename ${file:0:(-3)}) | awk '{ print tolower($0) }'`
-
+    table_name=`echo $(basename ${file:0:(-4)}) | awk '{ print tolower($0) }'`
+    
     # Asynchronously load data to BigQuery.
-    job_id=${table_name}_$(date +%s)
     bq --nosync --location=${LOCATION} --project_id=${PROJECT_ID} \
-      load --job_id=${job_id} --skip_leading_rows=1 --source_format=CSV \
+      load --skip_leading_rows=1 --source_format=CSV \
       --replace --allow_quoted_newline "${DATASET_ID}.${table_name}" \
       gs://${BUCKET_ID}/$(basename ${file}) ${schema_file}
     job_ids+=(${job_id})
@@ -161,10 +161,6 @@ if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
 
   echo "All BigQuery loading jobs have been submitted."
   echo "Waiting for jobs to finish."
-  for job_id in ${job_ids[*]}; do
-    # The wait command will print out real-time status of the job.
-    bq wait --project_id=${PROJECT_ID} ${job_id}
-  done
 else
   echo "Skip uploading data to BigQuery since it has previously finished."
 fi
