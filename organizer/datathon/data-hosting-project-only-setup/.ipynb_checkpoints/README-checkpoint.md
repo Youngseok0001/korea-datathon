@@ -1,5 +1,6 @@
-# Google Cloud Project Setup Guide for Datathons
 
+# Google Cloud Project Setup Guide for Datathons
+--modified by Jeon Young Seok--
 This guide is designed to help structured data users (e.g. healthcare datathon
 organizers and participants, structured data analysis course instructors and
 students) to set up a set of Google Cloud Projects, in order to host the
@@ -19,15 +20,16 @@ Templates. Please see its [documentation](../deploy/README.md) for more backgrou
 Before going into the set-up steps be reminded you can also replicate the same step with the friendly UI from [Google Cloud](https://cloud.google.com/gcp). The detailed steps for Google Cloud UI is [here](https://hevodata.com/blog/postgresql-to-bigquery-data-migration/). One disadvantage of using Google Cloud UI however would be that you have to upload your tables one by one, which could be time consuming for a big dataset.
 
 ### STEP 1:  Create Data-project and Googlegroups 
-You can perform all the setup through Cloud Shell in Google Cloud Platform.  Lets first create a dummy project  to work in a Cloud Shell. For a first-time Google Cloud user, you need to accept the Terms of Service on
+You can perform all the setup through Cloud Shell in Google Cloud Platform.  Let's first create a dummy project  to work in a Cloud Shell. For a first-time Google Cloud user, you need to accept the Terms of Service on
 [Cloud Console](https://console.cloud.google.com) to proceed.
 
-* Create a googlegroups account from [google group](https://groups.google.com/forum/#!overview).
+* Create a googlegroups account from [google group](https://groups.google.com).
 
-* Go to [GCP](console.cloud.google.com/) and create a data hosting project.
+* Go to [GCP](https://console.cloud.google.com) and create a data hosting project.
+* Add Billing Account by registering your credit card(eg. 0112DF-1547FD-008D73)
 * Switch to the project created
-* Crick the  icon that looks like below to open  a Cloud Shell.
-image
+* Click  ![ ](../../images/shell.png) to open  a Cloud Shell.
+
 *  lets verify that gcloud and bq commands are executable by running the commands  below. 
 ```shell
 	gcloud init
@@ -42,13 +44,12 @@ image
 ###  STEP2: Clone Datathon repository and install requirements
 * Let's download scripts and dummy dataset which we will be uploading to Bigquery.
 ```shell
-	git clone https://github.com/nus-mornin-lab/datathon
+	git clone https://github.com/Youngseok0001/korea-datathon
 ```
 * Install&update required dependancies
 ```shell
-	cd datathon/organizer/deploy
+	cd korea-datathon/organizer/deploy
 	pip3 install -r requirements.txt
-	cd ..
 ```
 
 ###  STEP3: Modification of "upload_data.sh" script
@@ -70,9 +71,9 @@ image
 ```
 -- for example
  
-OWNERS_GROUP="data-owners@googlegroups.com"
-PROJECT_ID="kor-data"
-DATASET_NAME="demo"
+OWNERS_GROUP="kor-datathon-data-owners@googlegroups.com"
+PROJECT_ID="kor-datathon-data"
+DATASET_NAME="cdm"
 INPUT_DIR="../dataset/data"
 SCHEMA_DIR="../dataset/schmas"
 ```
