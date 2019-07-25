@@ -19,10 +19,10 @@ Templates. Please see its [documentation](../deploy/README.md) for more backgrou
 
 ## Setup steps 
 
-Before going into the set-up steps be reminded you can also replicate the same step with the friendly UI from [Google Cloud](https://cloud.google.com/gcp). The detailed steps for Google Cloud UI is [here](https://hevodata.com/blog/postgresql-to-bigquery-data-migration/). One disadvantage of using Google Cloud UI however would be that you have to upload your tables one by one, which could be time consuming for a big dataset.
+Before going into the set-up steps be reminded you can also replicate the same steps with the friendly UI from [Google Cloud](https://cloud.google.com/gcp). The detailed steps for Google Cloud UI is [here](https://hevodata.com/blog/postgresql-to-bigquery-data-migration/). One disadvantage of using Google Cloud UI however would be that you have to upload your tables one by one, which could be time consuming for a big dataset.
 
 ### STEP 1:  Create Data-project and Googlegroups 
-You can perform all the setup through Cloud Shell in Google Cloud Platform.  Let's first create a dummy project  to work in a Cloud Shell. For a first-time Google Cloud user, you need to accept the Terms of Service on
+You can perform all the setup through Cloud Shell in Google Cloud Platform.  Let's first create a dummy project  to work in a Cloud Shell. For the first-time Google Cloud user, you need to accept the Terms of Service on
 [Cloud Console](https://console.cloud.google.com) to proceed.
 
 * Create a googlegroups account from [google group](https://groups.google.com).
