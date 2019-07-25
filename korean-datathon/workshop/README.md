@@ -9,9 +9,9 @@ welcome to [2019 KOREA DATATHON WORKSHOP](http://datathon.konect.or.kr/)! Here a
 *   Please be reminded that all of the queries here are made for MIMICiii dataset. For the actual upcoming Datathon, depending on the team which you would get assigned to, you would have to change the project name from `physionet-data` to `korea-datathon-data` and qeury for the right dataset and its associated tables. for example,
     
 ```SQL
--- cdm dataset
+-- SNU dataset
 SELECT *
-FROM `korea-datathon-data.cdm.patients` 
+FROM `korea-datathon-data.snu.patients` 
 LIMIT 100
 ```
 ```SQL
