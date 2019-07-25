@@ -28,7 +28,7 @@ You can perform all the setup through Cloud Shell in Google Cloud Platform.  Let
 * Go to [GCP](https://console.cloud.google.com) and create a data hosting project.
 * Add Billing Account by registering your credit card(eg. 0112DF-1547FD-008D73)
 * Switch to the project created
-* Click  ![ ](../../images/shell.png) to open  a Cloud Shell.
+* Click  ![ ](../../../images/shell.png) to open  a Cloud Shell.
 
 *  lets verify that gcloud and bq commands are executable by running the commands  below. 
 ```shell
