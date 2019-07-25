@@ -25,6 +25,7 @@ DATASET_NAME="demo"
 INPUT_DIR="../dataset/data"
 SCHEMA_DIR="../dataset/schmas"
 LOCATION=asia-northeast1
+STATE_FILE="$0".state
 
 # Lowercase is required for bucket name, and BigQuery dataset ID can't contain
 # dash.
@@ -129,9 +130,9 @@ generate_schema() {
 if [[ `cat ${STATE_FILE}` == ${STATE_UPLOAD_BQ} ]]; then
   job_ids=()
   echo "Loading data from Google Cloud Storage to BigQuery."
-  for file in ${INPUT_DIR}/*.csv.gz; do
+  for file in ${INPUT_DIR}/*.csv; do
     echo "Loading data file `basename ${file}` to BigQuery."
-    # Assume the schema file ends with .csv.gz.schema suffix.
+    # Assume the schema file ends with .csv.schema suffix.
     schema_file=${SCHEMA_DIR}/$(basename ${file}).schema
     delete_schema_file=false
     if [[ ! -e ${schema_file} ]]; then
