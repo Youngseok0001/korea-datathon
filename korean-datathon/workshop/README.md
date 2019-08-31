@@ -34,7 +34,7 @@ LIMIT 100
 	3. Add covariates
 	4. Run statistical models to predict or find associative variables.
 
-* We have prepared a [Python colab](http://colab.research.google.com/github/GoogleCloudPlatform/healthcare/blob/master/korea-datathon/workshop/workshop_tut_colab.ipynb) (a copy is available in the [tutorials](bigquery_tutorial.ipynb) folder as well) for the second part of tutorial, which is a Jupyter notebook hosted in Google Drive, and can be shared with other people for collaboration. It has the most comprehensive examples, including how to train machine learning models on the MIMIC demo dataset with [Scikit-learn](https://scikit-learn.org/stable/) and [Tensorflow](https://www.tensorflow.org/).
+* We have prepared a [Python colab](http://colab.research.google.com/github/GoogleCloudPlatform/healthcare/blob/master/korea-datathon/korean-datathon/workshop/workshop_tut_colab.ipynb) (a copy is available in the [tutorials](bigquery_tutorial.ipynb) folder as well) for the second part of tutorial, which is a Jupyter notebook hosted in Google Drive, and can be shared with other people for collaboration. It has the most comprehensive examples, including how to train machine learning models on the MIMIC demo dataset with [Scikit-learn](https://scikit-learn.org/stable/) and [Tensorflow](https://www.tensorflow.org/).
 
 ## TAKE AWAYS
 
